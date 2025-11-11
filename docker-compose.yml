@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: a2eg_dsa_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: a2eg_dsa_backend
+    depends_on:
+      - db
+    environment:
+      # Example DB URL for local dev via docker network
+      DATABASE_URL: ${DATABASE_URL}
+      # CORS origin for local frontend
+      FRONTEND_URL: ${FRONTEND_URL}
+      PORT: 8080
+    ports:
+      - "8000:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: a2eg_dsa_frontend
+    environment:
+      # For Vite build-time if needed
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
